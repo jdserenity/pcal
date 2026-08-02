@@ -1,43 +1,52 @@
 # Code map
 
-Map of this project's codebase for the maintainer: which files do what, how data and control flow between them, where state lives. Prefer diagrams (mermaid or ASCII). Write in the first person (I, me, my).
+Map of this project's codebase for the maintainer: which files do what, how data and control flow between them, where state lives.
 
-## What belongs here
-
-- File / module map: important paths and one-line roles
-- Data and control flow between those pieces
-- Where state lives (DB, files, env, memory, external services)
-- Diagrams of the above when they clarify the map
-
-## What does not belong here
-
-- Install, run, or usage instructions — those live in root `README.md` (keep that README lean)
-- Product pitch or "what this app is for" — durable product/system facts go in `scaffold/CODEMAP-LLM.md`
-- Generic tutorials, glossaries, or coaching
-
-## Example shape (replace with this project's real map)
-
-### Layout
+## Layout
 
 ```
-src/
-  main.ts           # entry; wires the router
-  routes/orders.ts  # HTTP handlers for orders
-  db/client.ts      # DB connection used by routes
-lib/
-  auth.ts           # session checks called from routes
+bin/pcal                 # run from repo without installing (`./bin/pcal`)
+scripts/install.sh       # copies pcal/ → ~/.local/lib/pcal; writes ~/.local/bin/pcal
+config.example.toml      # template copied by `pcal --init`
+pcal/
+  cli.py                 # argparse, orchestration, --dry-run / --init
+  agent_parse.py         # calls `agent -p --mode ask --model composer-2.5`
+  validate.py            # JSON → EventSpec (defaults end = start+1h)
+  ics.py                 # RFC 5545 METHOD:REQUEST body
+  mail.py                # MIME invite + SMTP via Bridge
+  config.py              # ~/.config/pcal/config.toml (+ PCAL_* env)
+tests/                   # unit tests (mocked agent/SMTP)
 ```
 
-### Flow
+## Install (global `pcal` command)
+
+After `./scripts/install.sh`, two paths under `~/.local/` — different jobs, not two copies of the app:
+
+| Path | Role |
+|------|------|
+| `~/.local/bin/pcal` | Small launcher on `PATH`; what you run when you type `pcal` |
+| `~/.local/lib/pcal/` | Installed app: `pcal/` package + `config.example.toml` |
+
+Re-run `./scripts/install.sh` after changing code in this repo. Use `./bin/pcal` to try repo changes without installing.
+
+## Flow
 
 ```mermaid
 flowchart LR
-  Client --> routes/orders.ts
-  routes/orders.ts --> lib/auth.ts
-  routes/orders.ts --> db/client.ts
+  User["pcal NL request"] --> cli.py
+  cli.py --> config.py
+  cli.py --> agent_parse.py
+  agent_parse.py --> AgentCLI["Cursor agent CLI"]
+  agent_parse.py --> validate.py
+  validate.py --> ics.py
+  ics.py --> mail.py
+  mail.py --> Bridge["Proton Mail Bridge SMTP :1025"]
+  Bridge --> Proton["Proton Mail inbox"]
+  Proton --> Cal["Accept → Proton Calendar"]
 ```
 
-### State
+## State
 
-- Order rows: Postgres `orders` table (via `db/client.ts`)
-- Session: cookie → checked in `lib/auth.ts`
+- Credentials / addresses: `~/.config/pcal/config.toml` (or `PCAL_CONFIG` / `PCAL_SMTP_PASSWORD`)
+- No app database; each run is one-shot
+- Local timezone default from the Mac (`datetime.now().astimezone()` / `/etc/localtime`) unless `timezone` is set in config
