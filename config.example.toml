@@ -1,0 +1,22 @@
+# Copy to ~/.config/pcal/config.toml and fill in your values.
+# Never commit real credentials.
+
+# Proton address that sends the invitation (must match Bridge SMTP login).
+from_email = "you@proton.me"
+
+# Where the invitation is delivered. Use the same address to invite yourself
+# so accepting it in Proton Calendar adds the event to your calendar.
+to_email = "you@proton.me"
+
+# Optional display name on the invitation.
+from_name = "Your Name"
+
+# Proton Mail Bridge local SMTP (defaults below match Bridge's usual settings).
+smtp_host = "127.0.0.1"
+smtp_port = 1025
+smtp_user = "you@proton.me"
+smtp_password = "bridge-mailbox-password"
+
+# Optional: IANA timezone used when the request does not name one.
+# Leave unset to use this Mac's local timezone.
+# timezone = "America/Sao_Paulo"
