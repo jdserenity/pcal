@@ -11,8 +11,10 @@ chmod +x "$ROOT/bin/pcal" # ensures the pcal launcher can be executed directly i
 rm -rf "$INSTALL_DIR/pcal" # ensures a clean install. Won't fail if the target doesn't exist. `-f` ("force") suppresses errors for missing files/directories.
 cp -R "$ROOT/pcal" "$INSTALL_DIR/"
 cp "$ROOT/config.example.toml" "$INSTALL_DIR/"
-cp "$ROOT/bin/pcal" "$BIN_DIR/pcal"
-chmod +x "$BIN_DIR/pcal"
+launcher_tmp="$(mktemp)"
+cp "$ROOT/bin/pcal" "$launcher_tmp"
+chmod +x "$launcher_tmp"
+mv "$launcher_tmp" "$BIN_DIR/pcal"
 echo "Installed."
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
