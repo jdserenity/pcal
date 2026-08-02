@@ -13,11 +13,12 @@ Accept the invitation in Proton Mail / Calendar once. That is the only recurring
 
 ## Setup
 
-1. Install Cursor CLI and run `agent login` (model used: `composer-2.5`).
-2. Install and sign in to [Proton Mail Bridge](https://proton.me/mail/bridge). Keep Bridge running.
-3. In Bridge, open your mailbox → copy the **SMTP** username/password Bridge shows (not your normal Proton password).
-4. `./scripts/install.sh` then `pcal --init`, and fill in `~/.config/pcal/config.toml` (`from_email`, `to_email`, `smtp_user`, `smtp_password`). Use the same address for from/to to invite yourself.
-5. Bridge SMTP defaults: host `127.0.0.1`, port `1025`, STARTTLS.
+1. `python3 -m pip install --user --break-system-packages -r requirements.txt` (or run `./scripts/install.sh`, which installs deps too).
+2. Install Cursor CLI and run `agent login` (model used: `composer-2.5`).
+3. Install and sign in to [Proton Mail Bridge](https://proton.me/mail/bridge). Keep Bridge running.
+4. In Bridge, open your mailbox → copy the **SMTP** username/password Bridge shows (not your normal Proton password).
+5. `./scripts/install.sh` then `pcal --init`, and fill in `~/.config/pcal/config.toml` (`from_email`, `to_email`, `smtp_user`, `smtp_password`). Use the same address for from/to to invite yourself.
+6. Bridge SMTP defaults: host `127.0.0.1`, port `1025`, STARTTLS.
 
 ## Usage
 

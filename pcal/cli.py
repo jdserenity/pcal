@@ -6,14 +6,33 @@ import os
 import sys
 import traceback
 import uuid
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import TypeVar
+
+from yaspin import yaspin
 
 from pcal.agent_parse import AgentParseError, parse_event_with_agent
 from pcal.config import ConfigError, default_config_path, load_config, require_smtp, write_example_config
 from pcal.ics import build_invite_ics
 from pcal.mail import send_invite
-from pcal.validate import ValidationError, validate_event
+from pcal.validate import EventSpec, ValidationError, validate_event
+
+T = TypeVar("T")
+
+
+def run_with_status(message: str, func: Callable[[], T]) -> T:
+  if not sys.stderr.isatty():
+    return func()
+  with yaspin(text=message, color="cyan") as sp:
+    try:
+      result = func()
+    except BaseException:
+      sp.fail("✗")
+      raise
+    sp.ok("✓")
+    return result
 
 
 def local_timezone_name() -> str:
@@ -76,9 +95,12 @@ def main(argv: list[str] | None = None) -> int:
   default_tz = cfg.timezone or local_timezone_name()
   now_iso = datetime.now().astimezone().isoformat(timespec="seconds")
 
-  try:
+  def parse_and_validate() -> EventSpec:
     payload = parse_event_with_agent(request, now_iso=now_iso, default_tz=default_tz)
-    event = validate_event(payload, default_tz=default_tz)
+    return validate_event(payload, default_tz=default_tz)
+
+  try:
+    event = run_with_status("Parsing event…", parse_and_validate)
   except (AgentParseError, ValidationError) as exc:
     print(f"pcal: {exc}", file=sys.stderr)
     return 1
@@ -113,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"pcal: {exc}", file=sys.stderr)
     return 1
 
-  try:
+  def send() -> None:
     send_invite(
       event=event,
       ics_body=ics,
@@ -125,6 +147,9 @@ def main(argv: list[str] | None = None) -> int:
       smtp_user=cfg.smtp_user,
       smtp_password=cfg.smtp_password,
     )
+
+  try:
+    run_with_status("Sending invitation…", send)
   except Exception as exc:
     print(
       f"pcal: failed to send via SMTP ({cfg.smtp_host}:{cfg.smtp_port}): {exc}\n"

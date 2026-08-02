@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)" # Bash doesn’t give you a clean __fil
 BIN_DIR="${HOME}/.local/bin" # In bash, ${HOME} and $HOME are the same thing — both expand to the value of the HOME environment variable. The curly braces are optional parameter-expansion syntax. So this isn’t “HOME without $” — it’s $HOME with braces.
 INSTALL_DIR="${HOME}/.local/lib/pcal"
 mkdir -p "$BIN_DIR" "$INSTALL_DIR"
+python3 -m pip install --user --break-system-packages -q -r "$ROOT/requirements.txt"
 chmod +x "$ROOT/bin/pcal" # ensures the pcal launcher can be executed directly instead of only via python or sh
 rm -rf "$INSTALL_DIR/pcal" # ensures a clean install. Won't fail if the target doesn't exist. `-f` ("force") suppresses errors for missing files/directories.
 cp -R "$ROOT/pcal" "$INSTALL_DIR/"
