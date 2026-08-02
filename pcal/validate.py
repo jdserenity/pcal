@@ -19,6 +19,7 @@ class EventSpec:
   location: str | None
   description: str | None
   rrule: str | None
+  all_day: bool
 
 
 def _parse_dt(value: object, label: str, tz: ZoneInfo) -> datetime:
@@ -32,6 +33,21 @@ def _parse_dt(value: object, label: str, tz: ZoneInfo) -> datetime:
     raise ValidationError(f"Could not parse {label} as a date/time: {value!r}") from exc
   if dt.tzinfo is None: return dt.replace(tzinfo=tz)
   return dt.astimezone(tz)
+
+
+def _parse_bool(value: object, key: str, *, default: bool = False) -> bool:
+  if value in (None, ""):
+    return default
+  if not isinstance(value, bool):
+    raise ValidationError(f"{key} must be a boolean when provided.")
+  return value
+
+
+def _is_date_only(value: object) -> bool:
+  if not isinstance(value, str):
+    return False
+  text = value.strip()
+  return "T" not in text and len(text) == 10
 
 
 def validate_event(data: dict, *, default_tz: str) -> EventSpec:
@@ -60,11 +76,21 @@ def validate_event(data: dict, *, default_tz: str) -> EventSpec:
       "Not enough information: need a start date/time (for example 'tomorrow at 7 PM')."
     )
   start = _parse_dt(data.get("start"), "start", tz)
+  all_day = _parse_bool(data.get("all_day"), "all_day") or _is_date_only(data.get("start"))
 
   end_raw = data.get("end")
   duration = data.get("duration_minutes")
-  if end_raw not in (None, ""):
+  if all_day:
+    if end_raw not in (None, ""):
+      end = _parse_dt(end_raw, "end", tz)
+    else:
+      end = start + timedelta(days=1)
+    if end <= start:
+      raise ValidationError("End date must be after start date.")
+  elif end_raw not in (None, ""):
     end = _parse_dt(end_raw, "end", tz)
+    if end <= start:
+      raise ValidationError("End time must be after start time.")
   else:
     minutes = 60
     if duration not in (None, ""):
@@ -74,9 +100,8 @@ def validate_event(data: dict, *, default_tz: str) -> EventSpec:
       if minutes <= 0:
         raise ValidationError("duration_minutes must be positive.")
     end = start + timedelta(minutes=minutes)
-
-  if end <= start:
-    raise ValidationError("End time must be after start time.")
+    if end <= start:
+      raise ValidationError("End time must be after start time.")
 
   def opt(key: str) -> str | None:
     val = data.get(key)
@@ -94,4 +119,5 @@ def validate_event(data: dict, *, default_tz: str) -> EventSpec:
     location=opt("location"),
     description=opt("description"),
     rrule=opt("rrule"),
+    all_day=all_day,
   )

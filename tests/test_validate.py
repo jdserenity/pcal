@@ -67,5 +67,42 @@ class ValidateTests(unittest.TestCase):
       validate_event({"error": "Need a date or time"}, default_tz="America/Sao_Paulo")
     self.assertIn("Need a date or time", str(ctx.exception))
 
+  def test_all_day_defaults_end_to_next_day(self):
+    ev = validate_event(
+      {"title": "Dog's birthday", "start": "2026-08-19", "all_day": True},
+      default_tz="America/Sao_Paulo",
+    )
+    self.assertTrue(ev.all_day)
+    self.assertEqual(ev.start.date().isoformat(), "2026-08-19")
+    self.assertEqual(ev.end.date().isoformat(), "2026-08-20")
+
+  def test_date_only_start_infers_all_day(self):
+    ev = validate_event(
+      {"title": "Holiday", "start": "2026-12-25"},
+      default_tz="America/Sao_Paulo",
+    )
+    self.assertTrue(ev.all_day)
+    self.assertEqual(ev.end.date().isoformat(), "2026-12-26")
+
+  def test_all_day_explicit_end(self):
+    ev = validate_event(
+      {
+        "title": "Trip",
+        "start": "2026-08-19",
+        "end": "2026-08-22",
+        "all_day": True,
+      },
+      default_tz="America/Sao_Paulo",
+    )
+    self.assertTrue(ev.all_day)
+    self.assertEqual(ev.end.date().isoformat(), "2026-08-22")
+
+  def test_timed_event_not_all_day(self):
+    ev = validate_event(
+      {"title": "Dinner", "start": "2026-08-01T19:00:00"},
+      default_tz="America/Sao_Paulo",
+    )
+    self.assertFalse(ev.all_day)
+
 if __name__ == "__main__":
   unittest.main()
