@@ -7,7 +7,7 @@ import sys
 import traceback
 import uuid
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TypeVar
 
@@ -49,6 +49,17 @@ def local_timezone_name() -> str:
   return "UTC"
 
 
+def format_event_when(event: EventSpec) -> str:
+  if event.all_day:
+    start_d = event.start.date()
+    end_d = event.end.date()
+    last_d = end_d - timedelta(days=1)
+    if start_d == last_d:
+      return f"{start_d.isoformat()} (all day)"
+    return f"{start_d.isoformat()}–{last_d.isoformat()} (all day)"
+  return f"{event.start.strftime('%Y-%m-%d %H:%M')}–{event.end.strftime('%H:%M')} {event.timezone}"
+
+
 def example_config_src() -> Path:
   return Path(__file__).resolve().parent.parent / "config.example.toml"
 
@@ -56,7 +67,7 @@ def example_config_src() -> Path:
 def build_parser() -> argparse.ArgumentParser:
   p = argparse.ArgumentParser(
     prog="pcal",
-    description="Create a Proton Calendar event from natural language via a calendar invitation email.",
+    description="Create a Proton Calendar event from natural language via a calendar email.",
   )
   p.add_argument("request", nargs="*", help="Natural-language event description") # This isn't a --request flag, this is just whatever the request is. Using nargs="*" allows flexible input (multiple words). Naming helps reference this argument in code (e.g., args.request).
   p.add_argument("--init", action="store_true", help="Write ~/.config/pcal/config.toml from the example")
@@ -115,10 +126,9 @@ def main(argv: list[str] | None = None) -> int:
     uid=uid,
     organizer_email=cfg.from_email,
     organizer_name=cfg.from_name,
-    attendee_email=cfg.to_email,
   )
 
-  when = f"{event.start.strftime('%Y-%m-%d %H:%M')}–{event.end.strftime('%H:%M')} {event.timezone}"
+  when = format_event_when(event)
   print(f"Event: {event.title}")
   print(f"When:  {when}")
   if event.location: print(f"Where: {event.location}")
@@ -149,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
   try:
-    run_with_status("Sending invitation…", send)
+    run_with_status("Sending calendar email…", send)
   except Exception as exc:
     print(
       f"pcal: failed to send via SMTP ({cfg.smtp_host}:{cfg.smtp_port}): {exc}\n"
@@ -158,7 +168,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     return 1
 
-  print(f"Invitation sent to {cfg.to_email}. Accept it in Proton Calendar to add the event.")
+  print(
+    f"Calendar email sent to {cfg.to_email}. "
+    "Open it in Proton Mail and click Add to Proton Calendar."
+  )
   return 0
 
 

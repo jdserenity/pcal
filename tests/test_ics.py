@@ -18,29 +18,30 @@ class IcsTests(unittest.TestCase):
       location=None,
       description=None,
       rrule=None,
+      all_day=False,
     )
     base.update(kwargs)
     return EventSpec(**base)
 
-  def test_method_request_and_core_fields(self):
+  def test_publish_without_attendee(self):
+    # Proton rejects METHOD:REQUEST self-adds with "Invalid response".
     ics = build_invite_ics(
       self._event(),
       uid="test-uid@pcal",
       organizer_email="me@proton.me",
       organizer_name="Me",
-      attendee_email="me@proton.me",
       dtstamp=datetime(2026, 7, 31, 12, 0, 0, tzinfo=ZoneInfo("UTC")),
     )
     self.assertIn("BEGIN:VCALENDAR", ics)
-    self.assertIn("METHOD:REQUEST", ics)
+    self.assertIn("METHOD:PUBLISH", ics)
+    self.assertNotIn("METHOD:REQUEST", ics)
     self.assertIn("BEGIN:VEVENT", ics)
     self.assertIn("UID:test-uid@pcal", ics)
     self.assertIn("SUMMARY:Dinner with Marcelo", ics)
     self.assertIn("DTSTART;TZID=America/Sao_Paulo:20260801T190000", ics)
     self.assertIn("DTEND;TZID=America/Sao_Paulo:20260801T210000", ics)
     self.assertIn("ORGANIZER;CN=Me:mailto:me@proton.me", ics)
-    self.assertIn("ATTENDEE;", ics)
-    self.assertIn("mailto:me@proton.me", ics)
+    self.assertNotIn("ATTENDEE", ics)
     self.assertIn("END:VEVENT", ics)
     self.assertIn("END:VCALENDAR", ics)
     self.assertTrue(ics.endswith("\r\n") or "\r\n" in ics)
@@ -51,7 +52,6 @@ class IcsTests(unittest.TestCase):
       uid="u@pcal",
       organizer_email="a@b.c",
       organizer_name=None,
-      attendee_email="a@b.c",
     )
     self.assertNotIn("LOCATION:", ics)
 
@@ -61,7 +61,6 @@ class IcsTests(unittest.TestCase):
       uid="u@pcal",
       organizer_email="a@b.c",
       organizer_name=None,
-      attendee_email="a@b.c",
     )
     self.assertIn("LOCATION:Cafe", ics)
     self.assertIn("DESCRIPTION:Bring dessert", ics)
@@ -73,10 +72,24 @@ class IcsTests(unittest.TestCase):
       uid="u@pcal",
       organizer_email="a@b.c",
       organizer_name=None,
-      attendee_email="a@b.c",
     )
     self.assertIn(r"SUMMARY:Dinner\; with\nMarcelo\, maybe", ics)
     self.assertIn(r"DESCRIPTION:Line1\nLine2", ics)
+
+  def test_all_day_single_day_uses_value_date(self):
+    tz = ZoneInfo("America/Sao_Paulo")
+    start = datetime(2026, 8, 19, 0, 0, tzinfo=tz)
+    end = datetime(2026, 8, 20, 0, 0, tzinfo=tz)
+    ics = build_invite_ics(
+      self._event(start=start, end=end, all_day=True, rrule="FREQ=YEARLY"),
+      uid="u@pcal",
+      organizer_email="a@b.c",
+      organizer_name=None,
+    )
+    self.assertIn("DTSTART;VALUE=DATE:20260819", ics)
+    self.assertIn("DTEND;VALUE=DATE:20260820", ics)
+    self.assertNotIn("TZID=", ics.split("SUMMARY:")[0])
+    self.assertIn("RRULE:FREQ=YEARLY", ics)
 
   def test_folds_long_lines(self):
     long_title = "A" * 100
@@ -85,7 +98,6 @@ class IcsTests(unittest.TestCase):
       uid="u@pcal",
       organizer_email="a@b.c",
       organizer_name=None,
-      attendee_email="a@b.c",
     )
     # RFC 5545 line folding: CRLF + space continuation
     self.assertIn("\r\n ", ics)

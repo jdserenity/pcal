@@ -1,7 +1,7 @@
 import json, unittest
 from unittest.mock import patch
 
-from pcal.agent_parse import AgentParseError, build_prompt, extract_json, parse_event_with_agent
+from pcal.agent_parse import AgentParseError, MODEL, build_prompt, extract_json, parse_event_with_agent
 
 class ExtractJsonTests(unittest.TestCase):
   def test_raw_object(self):
@@ -45,7 +45,7 @@ class AgentParseTests(unittest.TestCase):
     self.assertEqual(args[0], "agent")
     self.assertIn("-p", args)
     self.assertIn("--model", args)
-    self.assertIn("composer-2.5", args)
+    self.assertIn(MODEL, args)
     self.assertIn("--mode", args)
     self.assertIn("ask", args)
 

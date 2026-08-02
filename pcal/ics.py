@@ -1,4 +1,4 @@
-"""Build RFC 5545 iCalendar METHOD:REQUEST invitations Proton Calendar accepts."""
+"""Build RFC 5545 iCalendar METHOD:PUBLISH events Proton Calendar accepts."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -37,6 +37,10 @@ def _fmt_local(dt: datetime) -> str:
   return dt.strftime("%Y%m%dT%H%M%S")
 
 
+def _fmt_date(dt: datetime) -> str:
+  return dt.strftime("%Y%m%d")
+
+
 def _fmt_utc(dt: datetime) -> str:
   return dt.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
@@ -47,7 +51,6 @@ def build_invite_ics(
   uid: str,
   organizer_email: str,
   organizer_name: str | None,
-  attendee_email: str,
   dtstamp: datetime | None = None,
 ) -> str:
   stamp = dtstamp or datetime.now(timezone.utc)
@@ -56,14 +59,20 @@ def build_invite_ics(
     "PRODID:-//pcal//EN",
     "VERSION:2.0",
     "CALSCALE:GREGORIAN",
-    "METHOD:REQUEST",
+    "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     f"UID:{uid}",
     f"DTSTAMP:{_fmt_utc(stamp)}",
-    f"DTSTART;TZID={event.timezone}:{_fmt_local(event.start)}",
-    f"DTEND;TZID={event.timezone}:{_fmt_local(event.end)}",
-    f"SUMMARY:{_escape(event.title)}",
   ]
+  if event.all_day:
+    lines.append(f"DTSTART;VALUE=DATE:{_fmt_date(event.start)}")
+    lines.append(f"DTEND;VALUE=DATE:{_fmt_date(event.end)}")
+  else:
+    lines.extend([
+      f"DTSTART;TZID={event.timezone}:{_fmt_local(event.start)}",
+      f"DTEND;TZID={event.timezone}:{_fmt_local(event.end)}",
+    ])
+  lines.append(f"SUMMARY:{_escape(event.title)}")
   if event.description:
     lines.append(f"DESCRIPTION:{_escape(event.description)}")
   if event.location:
@@ -74,9 +83,5 @@ def build_invite_ics(
     lines.append(f"ORGANIZER;CN={_escape(organizer_name)}:mailto:{organizer_email}")
   else:
     lines.append(f"ORGANIZER:mailto:{organizer_email}")
-  lines.append(
-    "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;"
-    f"RSVP=TRUE:mailto:{attendee_email}"
-  )
   lines.extend(["STATUS:CONFIRMED", "SEQUENCE:0", "TRANSP:OPAQUE", "END:VEVENT", "END:VCALENDAR", ""])
   return "\r\n".join(_fold(line) for line in lines)

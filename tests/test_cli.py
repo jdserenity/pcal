@@ -1,7 +1,10 @@
 import unittest
+from datetime import datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
-from pcal.cli import main
+from pcal.cli import format_event_when, main
+from pcal.validate import EventSpec
 
 class CliTests(unittest.TestCase):
   def test_no_args_fails(self):
@@ -45,6 +48,20 @@ class CliTests(unittest.TestCase):
     parse_event.return_value = {"error": "Please include a date or time."}
     code = main(["asdf"])
     self.assertEqual(code, 1)
+
+  def test_format_all_day_single_day(self):
+    tz = ZoneInfo("America/Sao_Paulo")
+    event = EventSpec(
+      title="Dog's birthday",
+      start=datetime(2026, 8, 19, 0, 0, tzinfo=tz),
+      end=datetime(2026, 8, 20, 0, 0, tzinfo=tz),
+      timezone="America/Sao_Paulo",
+      location=None,
+      description=None,
+      rrule="FREQ=YEARLY",
+      all_day=True,
+    )
+    self.assertEqual(format_event_when(event), "2026-08-19 (all day)")
 
 if __name__ == "__main__":
   unittest.main()

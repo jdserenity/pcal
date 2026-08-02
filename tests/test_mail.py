@@ -18,10 +18,11 @@ class MailTests(unittest.TestCase):
       location=None,
       description=None,
       rrule=None,
+      all_day=False,
     )
 
-  def test_message_has_calendar_parts(self):
-    ics = "BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nEND:VCALENDAR\r\n"
+  def test_message_uses_publish(self):
+    ics = "BEGIN:VCALENDAR\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR\r\n"
     msg = build_invite_message(
       event=self._event(),
       ics_body=ics,
@@ -40,7 +41,7 @@ class MailTests(unittest.TestCase):
     self.assertIn("text/calendar", types)
     calendar_parts = [p for p in parsed.walk() if p.get_content_type() == "text/calendar"]
     self.assertTrue(calendar_parts)
-    self.assertEqual(calendar_parts[0].get_param("method"), "REQUEST")
+    self.assertEqual(calendar_parts[0].get_param("method"), "PUBLISH")
 
   @patch("pcal.mail.smtplib.SMTP")
   def test_send_uses_starttls_and_auth(self, smtp_cls):

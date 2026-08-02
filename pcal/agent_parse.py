@@ -11,7 +11,7 @@ class AgentParseError(Exception):
   pass
 
 
-MODEL = "composer-2.5"
+MODEL = "composer-2.5-fast"
 
 PROMPT_TEMPLATE = """You convert a natural-language calendar request into JSON for a CLI tool.
 
@@ -27,8 +27,10 @@ Rules:
 - Use the default timezone unless the user names another.
 - start and end must be ISO-8601 local datetimes WITHOUT a trailing Z unless the instant is UTC. Prefer naive local wall time in the chosen timezone, e.g. "2026-08-01T19:00:00".
 - If the user gives a duration ("for two hours") set duration_minutes and omit end, OR set end. Prefer duration_minutes when they gave a duration.
-- If no duration or end is given, omit both (the tool defaults to 60 minutes).
-- Omit keys that were not provided and cannot be inferred: location, description, rrule, timezone (omit timezone when default is fine).
+- If no duration or end is given, omit both (the tool defaults to 60 minutes for timed events).
+- When the user gives a date without a time (birthdays, anniversaries, holidays), set all_day to true. Use start as "YYYY-MM-DD" (preferred) or midnight "YYYY-MM-DDT00:00:00". Omit end and duration_minutes for a single all-day event (the tool defaults end to the next calendar day).
+- For multi-day all-day events, set all_day true and end to the exclusive end date (the day after the last day), e.g. Aug 19–21 → start "2026-08-19", end "2026-08-22".
+- Omit keys that were not provided and cannot be inferred: location, description, rrule, timezone, all_day (omit all_day when false).
 - rrule must be an iCalendar RRULE value without the "RRULE:" prefix when recurrence is clear (e.g. "FREQ=WEEKLY;BYDAY=MO").
 - title: keep the user's wording for the event name. Remove only scheduling fragments that you already put in start, end, duration_minutes, rrule, or timezone (dates, times, durations, recurrence). Do not shorten, summarize, or rephrase the rest. Do not move stripped scheduling text or purpose clauses into description. Omit description unless the user gave separate notes that are not part of the title.
   Example: "Check FIAP Vestibular results at 6pm to see if I got in, (15 minutes)" → title "Check FIAP Vestibular results to see if I got in", start 18:00 today, duration_minutes 15, no description.
@@ -40,6 +42,7 @@ JSON shape on success:
   "start": "YYYY-MM-DDTHH:MM:SS",
   "end": "YYYY-MM-DDTHH:MM:SS",
   "duration_minutes": 120,
+  "all_day": true,
   "location": "string",
   "description": "string",
   "rrule": "FREQ=WEEKLY;BYDAY=MO",
