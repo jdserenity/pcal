@@ -30,7 +30,8 @@ Rules:
 - If no duration or end is given, omit both (the tool defaults to 60 minutes).
 - Omit keys that were not provided and cannot be inferred: location, description, rrule, timezone (omit timezone when default is fine).
 - rrule must be an iCalendar RRULE value without the "RRULE:" prefix when recurrence is clear (e.g. "FREQ=WEEKLY;BYDAY=MO").
-- title should be a short calendar title.
+- title: keep the user's wording for the event name. Remove only scheduling fragments that you already put in start, end, duration_minutes, rrule, or timezone (dates, times, durations, recurrence). Do not shorten, summarize, or rephrase the rest. Do not move stripped scheduling text or purpose clauses into description. Omit description unless the user gave separate notes that are not part of the title.
+  Example: "Check FIAP Vestibular results at 6pm to see if I got in, (15 minutes)" → title "Check FIAP Vestibular results to see if I got in", start 18:00 today, duration_minutes 15, no description.
 - If the request is genuinely not enough to schedule anything (no usable title/time), return {{"error":"short explanation of what is missing"}} instead.
 
 JSON shape on success:

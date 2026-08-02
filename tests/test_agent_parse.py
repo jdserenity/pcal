@@ -1,7 +1,7 @@
 import json, unittest
 from unittest.mock import patch
 
-from pcal.agent_parse import AgentParseError, extract_json, parse_event_with_agent
+from pcal.agent_parse import AgentParseError, build_prompt, extract_json, parse_event_with_agent
 
 class ExtractJsonTests(unittest.TestCase):
   def test_raw_object(self):
@@ -18,6 +18,17 @@ class ExtractJsonTests(unittest.TestCase):
   def test_invalid_fails(self):
     with self.assertRaises(AgentParseError):
       extract_json("no json here")
+
+class BuildPromptTests(unittest.TestCase):
+  def test_title_preserves_user_wording_minus_scheduling(self):
+    prompt = build_prompt(
+      "Check FIAP Vestibular results at 6pm to see if I got in, (15 minutes)",
+      now_iso="2026-08-02T15:00:00-03:00",
+      default_tz="America/Sao_Paulo",
+    )
+    self.assertIn("keep the user's wording", prompt)
+    self.assertIn("Do not shorten, summarize, or rephrase", prompt)
+    self.assertIn("Check FIAP Vestibular results to see if I got in", prompt)
 
 class AgentParseTests(unittest.TestCase):
   @patch("pcal.agent_parse.subprocess.run")
