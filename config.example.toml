@@ -4,8 +4,7 @@
 # Proton address that sends the invitation (must match Bridge SMTP login).
 from_email = "you@proton.me"
 
-# Where the invitation is delivered. Use the same address to invite yourself
-# so accepting it in Proton Calendar adds the event to your calendar.
+# Where the calendar email is delivered. Same address as from_email.
 to_email = "you@proton.me"
 
 # Optional display name on the invitation.

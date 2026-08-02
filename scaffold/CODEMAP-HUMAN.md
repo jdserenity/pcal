@@ -11,9 +11,9 @@ config.example.toml      # template copied by `pcal --init`
 pcal/
   cli.py                 # argparse, orchestration, --dry-run / --init
   agent_parse.py         # calls `agent -p --mode ask --model composer-2.5`
-  validate.py            # JSON → EventSpec (defaults end = start+1h)
-  ics.py                 # RFC 5545 METHOD:REQUEST body
-  mail.py                # MIME invite + SMTP via Bridge
+  validate.py            # JSON → EventSpec (timed: end = start+1h; all-day: end = next day)
+  ics.py                 # RFC 5545 METHOD:PUBLISH ICS (own calendar only)
+  mail.py                # MIME calendar email + SMTP via Bridge
   config.py              # ~/.config/pcal/config.toml (+ PCAL_* env)
 tests/                   # unit tests (mocked agent/SMTP)
 ```
@@ -42,7 +42,7 @@ flowchart LR
   ics.py --> mail.py
   mail.py --> Bridge["Proton Mail Bridge SMTP :1025"]
   Bridge --> Proton["Proton Mail inbox"]
-  Proton --> Cal["Accept → Proton Calendar"]
+  Proton --> Cal["Add to Proton Calendar"]
 ```
 
 ## State

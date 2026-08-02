@@ -1,6 +1,6 @@
 # pcal
 
-Natural-language calendar invites for Proton Calendar.
+Natural-language events for your Proton Calendar.
 
 ```bash
 ./scripts/install.sh   # re-run after changing code in this repo
@@ -9,7 +9,7 @@ pcal --init          # writes ~/.config/pcal/config.toml
 pcal "Dinner with Marcelo tomorrow at 7 PM for two hours"
 ```
 
-Accept the invitation in Proton Mail / Calendar once. That is the only recurring manual step.
+Open the email in Proton Mail and click **Add to Proton Calendar**. That is the only recurring manual step.
 
 ## Setup
 
@@ -17,7 +17,7 @@ Accept the invitation in Proton Mail / Calendar once. That is the only recurring
 2. Install Cursor CLI and run `agent login` (model used: `composer-2.5`).
 3. Install and sign in to [Proton Mail Bridge](https://proton.me/mail/bridge). Keep Bridge running.
 4. In Bridge, open your mailbox → copy the **SMTP** username/password Bridge shows (not your normal Proton password).
-5. `./scripts/install.sh` then `pcal --init`, and fill in `~/.config/pcal/config.toml` (`from_email`, `to_email`, `smtp_user`, `smtp_password`). Use the same address for from/to to invite yourself.
+5. `./scripts/install.sh` then `pcal --init`, and fill in `~/.config/pcal/config.toml` (`from_email`, `to_email`, `smtp_user`, `smtp_password`). Use the same address for from and to.
 6. Bridge SMTP defaults: host `127.0.0.1`, port `1025`, STARTTLS.
 
 ## Usage
